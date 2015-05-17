@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 type Auth struct {
@@ -26,7 +27,8 @@ func NewJenkins(auth *Auth, baseUrl string) *Jenkins {
 }
 
 func (jenkins *Jenkins) buildUrl(path string, params url.Values) (requestUrl string) {
-	requestUrl = jenkins.baseUrl + path + "/api/json"
+	formattedPath := strings.Replace(path, jenkins.baseUrl, "", -1)
+	requestUrl = jenkins.baseUrl + formattedPath + "/api/json"
 	if params != nil {
 		queryString := params.Encode()
 		if queryString != "" {
@@ -93,6 +95,36 @@ func (jenkins *Jenkins) GetJobs() ([]Job, error) {
 	}{}
 	err := jenkins.get("", nil, &payload)
 	return payload.Jobs, err
+}
+
+func (jenkins *Jenkins) GetJobsFromViews() (map[string]Job, error) {
+	var viewsPayload = struct {
+		Views []View `json:"views"`
+	}{}
+	params := url.Values{}
+	params.Set("tree", "views[name,url]")
+	err := jenkins.get("", params, &viewsPayload)
+	if err != nil {
+		return nil, err
+	}
+	fullJobListing := map[string]Job{}
+	for _, view := range viewsPayload.Views {
+		var payload = struct {
+			Jobs []Job `json:"jobs"`
+		}{}
+		fmt.Println("", view.Url)
+		err = jenkins.get(view.Url, nil, &payload)
+		if err != nil {
+			return nil, err
+		}
+		for _, job := range payload.Jobs {
+			fmt.Println("-- ", job.Name, job.Color)
+			if job.Color != "" {
+				fullJobListing[strings.ToLower(job.Name)] = job
+			}
+		}
+	}
+	return fullJobListing, err
 }
 
 // GetJob returns a job which has specified name.

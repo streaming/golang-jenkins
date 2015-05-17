@@ -33,3 +33,8 @@ type Job struct {
 	LastUnstableBuild     Build `json:"lastUnstableBuild"`
 	LastUnsuccessfulBuild Build `json:"lastUnsuccessfulBuild"`
 }
+
+type View struct {
+	Name string `json:"name"`
+	Url  string `json:"url"`
+}
