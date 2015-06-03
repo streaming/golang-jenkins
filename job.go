@@ -35,6 +35,7 @@ type Job struct {
 }
 
 type View struct {
-	Name string `json:"name"`
-	Url  string `json:"url"`
+	Name string 		`json:"name"`
+	Url  string 		`json:"url"`
+	Jobs map[string]Job	`json:"jobs"`
 }

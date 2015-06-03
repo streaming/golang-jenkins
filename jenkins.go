@@ -97,7 +97,7 @@ func (jenkins *Jenkins) GetJobs() ([]Job, error) {
 	return payload.Jobs, err
 }
 
-func (jenkins *Jenkins) GetJobsFromViews() (map[string]Job, error) {
+func (jenkins *Jenkins) GetJobsFromViews() ([]View, error) {
 	var viewsPayload = struct {
 		Views []View `json:"views"`
 	}{}
@@ -107,8 +107,7 @@ func (jenkins *Jenkins) GetJobsFromViews() (map[string]Job, error) {
 	if err != nil {
 		return nil, err
 	}
-	fullJobListing := map[string]Job{}
-	for _, view := range viewsPayload.Views {
+	for i, view := range viewsPayload.Views {
 		var payload = struct {
 			Jobs []Job `json:"jobs"`
 		}{}
@@ -117,14 +116,15 @@ func (jenkins *Jenkins) GetJobsFromViews() (map[string]Job, error) {
 		if err != nil {
 			return nil, err
 		}
+		viewsPayload.Views[i].Jobs = make(map[string]Job)
 		for _, job := range payload.Jobs {
 			fmt.Println("-- ", job.Name, job.Color)
 			if job.Color != "" {
-				fullJobListing[strings.ToLower(job.Name)] = job
+				viewsPayload.Views[i].Jobs[strings.ToLower(job.Name)] = job
 			}
 		}
 	}
-	return fullJobListing, err
+	return viewsPayload.Views, err
 }
 
 // GetJob returns a job which has specified name.
